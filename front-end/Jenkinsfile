@@ -1,5 +1,8 @@
 pipeline {
     agent any
+    environment{
+        dockerhub=credentials("dockerhub-team11")
+    }
 
     stages {
         stage('Pull Code') {
@@ -60,21 +63,66 @@ pipeline {
  
         }
 
+        stage('tagging  github'){
+            steps{
+                withCredentials([gitUsernamePassword(credentialsId: '7882d410-36db-40f1-9bd4-80675b0f5556', gitToolName: 'git-tool')]) {
+                    sh 'git tag ' + '1.0.'+ BUILD_NUMBER
+                    sh 'git tag'
+                    sh 'git push origin ' + '1.0.' + BUILD_NUMBER
+                }
+               
+            }
+        }
 
-        stage('Build') {
+        stage('Build push pull&deploy docker') {
             steps {
-                    sh '''cd front-end
-                    npm run build'''
+                withCredentials([
+                usernamePassword(credentialsId: 'team11-frontend', passwordVariable: 'password', usernameVariable: 'userName'), 
+                string(credentialsId: 'host-team11', variable: 'host'), string(credentialsId: 'name-team11', variable: 'name'), 
+                usernamePassword(credentialsId: 'docker-hub-team11', passwordVariable: 'dockerpassword', usernameVariable: 'dockerusername')]){
+                    script{
+                        def remote = [:]
+                        remote.name = name
+                        remote.host = host
+                        remote.user = userName
+                        remote.password = password
+                        remote.allowAnyHosts = true
+                        sshCommand remote: remote, command: "git clone -b matching_post https://github.com/armphanu/Software-Development-Tools-And-Environments-Group11.git"
+                        sshCommand remote: remote, command: "docker-compose -f Software-Development-Tools-And-Environments-Group11/docker-compose-build.yml build frontend"
+                        
+                        
+                        sshCommand remote: remote, command: "docker login -u $dockerusername -p $dockerpassword"
+                        sshCommand remote: remote, command: "docker push armphanu/team-11-frontend:1.0.0"
+                           
+                        sshCommand remote: remote, command: "docker pull armphanu/team-11-frontend:1.0.0"
+                        sshCommand remote: remote, command: "docker-compose -f Software-Development-Tools-And-Environments-Group11/docker-compose-deploy.yml up -d frontend"
+                        sshRemove remote: remote, path: "Software-Development-Tools-And-Environments-Group11"
+
+                    }
+                }
+
+            }
+            post{
+                failure{
+                    withCredentials([gitUsernamePassword(credentialsId: '7882d410-36db-40f1-9bd4-80675b0f5556', gitToolName: 'git-tool')]) {
+                    sh 'git tag -d ' + '1.0.'+ BUILD_NUMBER
+                    }
+                        
+                }
             }
         }
-        stage('Deploy') {
+
+        stage('Docker test') {
             steps {
-                echo 'Deploy'
+                sh '''cd front-end
+                npm run e2e_test'''
+
             }
         }
+
         stage('Notification') {
             steps {
-                echo 'All Stage pass'
+                echo 'all state success'
             }
         }
     }
