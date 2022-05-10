@@ -1,0 +1,38 @@
+{
+  "name": "front-end",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "test:unit": "vue-cli-service test:unit --coverage --detectOpenHandles --forceExit",
+    "lint": "vue-cli-service lint",
+    "all_test": "cypress run",
+    "component_test": "cypress run --spec 'cypress/integration/compoent_test.spec.js'",
+    "e2e_test": "cypress run --spec 'cypress/integration/e2e_test.spec.js'",
+    "cypress:open": "cypress open",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@cypress/vue": "^1.1.0-alpha.3",
+    "axios": "^0.26.0",
+    "core-js": "^3.6.5",
+    "cypress-mochawesome-reporter": "^3.0.0",
+    "vue": "^2.6.11",
+    "vue-router": "^2.8.1"
+  },
+  "devDependencies": {
+    "@cypress/code-coverage": "^3.9.12",
+    "@vue/cli-plugin-babel": "~4.5.15",
+    "@vue/cli-plugin-eslint": "~4.5.15",
+    "@vue/cli-plugin-unit-jest": "~4.5.15",
+    "@vue/cli-service": "~4.5.15",
+    "@vue/test-utils": "^1.0.3",
+    "babel-eslint": "^10.1.0",
+    "cypress": "^9.5.0",
+    "eslint": "^6.7.2",
+    "eslint-plugin-vue": "^6.2.2",
+    "flush-promises": "^1.0.2",
+    "vue-template-compiler": "^2.6.11"
+  }
+}
