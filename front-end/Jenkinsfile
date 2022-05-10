@@ -9,8 +9,8 @@ pipeline {
         stage('deploy') {
             steps {
                 sh '''
-                docker-compose -f docker-compose-build.yml build backend
-                docker-compose -f docker-compose-deploy.yml up -d backend
+                docker-compose -f docker-compose-build.yml build frontend
+                docker-compose -f docker-compose-deploy.yml up -d frontend
                 '''
             }
         }
