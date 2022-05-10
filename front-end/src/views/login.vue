@@ -90,7 +90,7 @@
                 type="button"
                 class="btn btn-success"
                 style="width: 250px; background-color: #b8d434; border: 0px"
-                @click="validatetel()"
+                @click="otp=1"
               >
                 รับรหัส OTP ทาง SMS
               </button>
