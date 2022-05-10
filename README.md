@@ -17,7 +17,7 @@ COPY --from=build /app/dist /usr/share/nginx/html
 ```bash
 version: "3"  # optional since v1.27.0
 services:
-frontend:
-  image: pomeiei/swdevtools-62070143-frontend:1.0.0
-  build: ./front-end
+  frontend:
+    image: pomeiei/swdevfinal
+    build: ./front-end
 ```
