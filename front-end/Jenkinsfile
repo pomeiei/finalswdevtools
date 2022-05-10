@@ -1,124 +1,20 @@
 pipeline {
     agent any
-    environment{
-        dockerhub=credentials("dockerhub-team11")
-    }
-
     stages {
         stage('Pull Code') {
             steps {
                 checkout scm
             }
         }
-        stage('Download dependency') {
+        stage('deploy') {
             steps {
-                sh '''cd front-end
-                npm install'''
-            }
-        }
-        stage('Scan code with Lint') {
-            steps {
-                sh '''cd front-end
-                npm run lint'''
-            }
-        }
-        stage('Run unit test') {
-            steps {
-                sh '''cd front-end
-                npm i jest-html-reporter
-                npm run test:unit'''
-            }
- 
-        }
-        stage('Create code coverage unit test') {
-            steps {
-                    clover(cloverReportDir: 'front-end/coverage', cloverReportFileName: 'clover.xml',
-                    healthyTarget: [methodCoverage: 70, conditionalCoverage: 80, statementCoverage: 80],
-                    unhealthyTarget: [methodCoverage: 0, conditionalCoverage: 0, statementCoverage: 0],
-                    failingTarget: [methodCoverage: 0, conditionalCoverage: 0, statementCoverage: 0]
-                )
-                publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: true, reportDir: 'front-end/coverage/lcov-report', reportFiles: 'index.html', reportName: 'Unit code coverage Report', reportTitles: 'Unit code coverage Report'])
-            }
- 
-        }
-        stage('Create test report unit test') {
-            steps {
-                publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: true, reportDir: 'front-end', reportFiles: 'test-report.html', reportName: 'Unit Test Report', reportTitles: 'Unit Test Report'])
-            }
- 
-        }
-
-         
-        stage('Run component test') {
-            steps {
-                    sh '''cd front-end
-                    npm i cypress-mochawesome-reporter
-                    npm run component_test'''
-            }
-        }
-        stage('Create test report component test') {
-            steps {
-                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: true, reportDir: 'front-end/cypress/reports', reportFiles: 'index.html', reportName: 'component Test Report', reportTitles: 'component Test Report'])
-            }
- 
-        }
-
-        stage('tagging  github'){
-            steps{
-                withCredentials([gitUsernamePassword(credentialsId: '7882d410-36db-40f1-9bd4-80675b0f5556', gitToolName: 'git-tool')]) {
-                    sh 'git tag ' + '1.0.'+ BUILD_NUMBER
-                    sh 'git tag'
-                    sh 'git push origin ' + '1.0.' + BUILD_NUMBER
-                }
-               
+                sh '''
+                docker-compose -f docker-compose-build.yml build backend
+                docker-compose -f docker-compose-deploy.yml up -d backend
+                '''
             }
         }
 
-        stage('Build push pull&deploy docker') {
-            steps {
-                withCredentials([
-                usernamePassword(credentialsId: 'team11-frontend', passwordVariable: 'password', usernameVariable: 'userName'), 
-                string(credentialsId: 'host-team11', variable: 'host'), string(credentialsId: 'name-team11', variable: 'name'), 
-                usernamePassword(credentialsId: 'docker-hub-team11', passwordVariable: 'dockerpassword', usernameVariable: 'dockerusername')]){
-                    script{
-                        def remote = [:]
-                        remote.name = name
-                        remote.host = host
-                        remote.user = userName
-                        remote.password = password
-                        remote.allowAnyHosts = true
-                        sshCommand remote: remote, command: "git clone -b matching_post https://github.com/armphanu/Software-Development-Tools-And-Environments-Group11.git"
-                        sshCommand remote: remote, command: "docker-compose -f Software-Development-Tools-And-Environments-Group11/docker-compose-build.yml build frontend"
-                        
-                        
-                        sshCommand remote: remote, command: "docker login -u $dockerusername -p $dockerpassword"
-                        sshCommand remote: remote, command: "docker push armphanu/team-11-frontend:1.0.0"
-                           
-                        sshCommand remote: remote, command: "docker pull armphanu/team-11-frontend:1.0.0"
-                        sshCommand remote: remote, command: "docker-compose -f Software-Development-Tools-And-Environments-Group11/docker-compose-deploy.yml up -d frontend"
-                        sshRemove remote: remote, path: "Software-Development-Tools-And-Environments-Group11"
-
-                    }
-                }
-
-            }
-            post{
-                failure{
-                    withCredentials([gitUsernamePassword(credentialsId: '7882d410-36db-40f1-9bd4-80675b0f5556', gitToolName: 'git-tool')]) {
-                    sh 'git tag -d ' + '1.0.'+ BUILD_NUMBER
-                    }
-                        
-                }
-            }
-        }
-
-        stage('Docker test') {
-            steps {
-                sh '''cd front-end
-                npm run e2e_test'''
-
-            }
-        }
 
         stage('Notification') {
             steps {
